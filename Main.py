@@ -51,14 +51,25 @@ def get_values():
     print(password)
     create_dict(user, password)
 
+space1 = Label(root, text=" ")
+space1.pack(pady = 10)
+title = Label(root, text="Log in:", font=('Century 20 bold'))
+title.pack(pady = 30)
+userText = ttk.Label(root, text="Username:", font=('Century 12'))
+userText.pack()
+userBox = ttk.Entry(root, font=('Century 12'), width=40)
+userBox.pack()
+space2 = Label(root, text=" ")
+space2.pack(pady = 5)
+passwordText = ttk.Label(root, text="Password:", font=('Century 12'))
+passwordText.pack()
+passwordBox = ttk.Entry(root, font=('Century 12'), width=40)
+passwordBox.pack()
+loginwarning = Label(root, text="(If user does not exist, it will be created)", font=('Century 12 italic'))
+loginwarning.pack(pady = 10)
 
-use = ttk.Entry(root, font=('Century 12'), width=40)
-use.pack(pady= 30)
-passd = ttk.Entry(root, font=('Century 12'), width=40)
-passd.pack(pady= 30)
-
-button = ttk.Button(root, text="Enter", command=get_values)
-button.pack()
+loginButton = ttk.Button(root, text="Log in", command=get_values)
+loginButton.pack()
 root.mainloop()
 
 
