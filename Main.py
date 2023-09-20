@@ -45,9 +45,9 @@ root = Tk()
 root.geometry("750x500")
 
 def get_values():
-    user = use.get()
+    user = userBox.get()
     print(user)
-    password = passd.get()
+    password = passwordBox.get()
     print(password)
     create_dict(user, password)
 
