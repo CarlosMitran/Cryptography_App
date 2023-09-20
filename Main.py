@@ -14,6 +14,7 @@ def write_input(json_file, inputs):
     try:
         with open(json_file, "w", encoding="UTF-8", newline="") as file:
             json.dump(list1, file, indent=2)
+            print("User " + inputs["username"] + " created")
     except FileNotFoundError as ex:
         raise Exception("Wrong file or file path") from ex
 
