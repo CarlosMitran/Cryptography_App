@@ -34,7 +34,10 @@ def find_username(data_list, inputs):
     for item in data_list:
         if item["username"] == inputs["username"]:
             if item["password"] != inputs["password"]:
-                raise Exception("Username already in use")
+                incorrectPasswordLabel = Label(root, text="Incorrect password", font='Century 12', fg="#FF5733")
+                incorrectPasswordLabel.pack()
+                raise Exception("Incorrect password")
+            #print("Welcome!, " + inputs["username"]) lo quito porque sino se imprime 3 veces
             return True
     return False
 
@@ -51,6 +54,12 @@ def get_values():
     password = passwordBox.get()
     print(password)
     create_dict(user, password)
+    if find_username(open_json("test.json"), {"username": user, "password": password}):
+        root.geometry("1500x950")
+        for widget in root.winfo_children():
+            widget.destroy()
+        welcomeLabel = Label(root, text="Welcome! " + user, font=('Century 20 bold'))
+        welcomeLabel.place(x= 25, y = 25)
 
 space1 = Label(root, text=" ")
 space1.pack(pady = 10)
