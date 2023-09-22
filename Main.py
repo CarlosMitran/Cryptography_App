@@ -36,6 +36,7 @@ def find_username(data_list, inputs):
             if item["password"] != inputs["password"]:
                 incorrectPasswordLabel = Label(root, text="Incorrect password", font='Century 12', fg="#FF5733")
                 incorrectPasswordLabel.pack()
+                passwordBox.delete(0, END)
                 raise Exception("Incorrect password")
             # print("Welcome!, " + inputs["username"]) lo quito porque sino se imprime 3 veces
             return True
