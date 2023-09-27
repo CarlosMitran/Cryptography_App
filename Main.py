@@ -1,11 +1,15 @@
 from tkinter import *
 from tkinter import ttk
 import json
+import os
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+import base64
 import re
 
 
 def write_input(json_file, inputs):
     list1 = open_json(json_file)
+    print(list1)
     found = find_username(list1, inputs)
     if found:
         print("Welcome!, " + inputs["username"])
@@ -30,6 +34,7 @@ def open_json(json_file):
     return data_list
 
 
+
 def find_username(data_list, inputs):
     for item in data_list:
         if item["username"] == inputs["username"]:
@@ -43,8 +48,9 @@ def find_username(data_list, inputs):
     return False
 
 
-def create_dict(user, password):
-    user_list = {"username": user, "password": password}
+def create_dict(user, password, salt):
+    user_list = {"username": user, "password": password, "salt": salt}
+    print(user_list)
     write_input("test.json", user_list)
 
 
@@ -57,14 +63,35 @@ def get_values():
     print(user)
     password = passwordBox.get()
     print(password)
-    create_dict(user, password)
-    if find_username(open_json("test.json"), {"username": user, "password": password}):
+    salt = os.urandom(16)
+    password, saltascii = calculate_key(password, salt)
+    create_dict(user, password, saltascii)
+    if find_username(open_json("test.json"), {"username": user, "password": password, "salt": saltascii}):
         root.geometry("1500x950")
         for widget in root.winfo_children():
             widget.destroy()
         welcomeLabel = Label(root, text="Welcome! " + user, font=('Century 20 bold'))
         welcomeLabel.place(x=25, y=25)
 
+def calculate_key(inputs, salt):
+    kdf = Scrypt(
+        salt=salt,
+        length=32,
+        n=2 ** 14,
+        r=8,
+        p=1,
+    )
+
+    key = kdf.derive(inputs.encode())
+    key64 = base64.b64encode(key)
+    keyascii = str(key64.decode("utf-8"))
+
+    salt64 = base64.b64encode(salt)
+    saltascii = str(salt64.decode("utf-8"))
+
+    print(keyascii)
+    print(saltascii)
+    return keyascii, saltascii
 
 space1 = Label(root, text=" ")
 space1.pack(pady=10)
