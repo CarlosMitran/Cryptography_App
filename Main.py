@@ -9,7 +9,6 @@ import re
 
 def write_input(json_file, inputs):
     list1 = open_json(json_file)
-    print(list1)
     found = find_username(list1, inputs)
     if found:
         print("Welcome!, " + inputs["username"])
@@ -37,8 +36,9 @@ def open_json(json_file):
 
 def find_username(data_list, inputs):
     for item in data_list:
+
         if item["username"] == inputs["username"]:
-            if item["password"] != inputs["password"]:
+            if verify_key(inputs["password"], item["password"], item["salt"]):
                 incorrectPasswordLabel = Label(root, text="Incorrect password", font='Century 12', fg="#FF5733")
                 incorrectPasswordLabel.pack()
                 passwordBox.delete(0, END)
@@ -92,6 +92,21 @@ def calculate_key(inputs, salt):
     print(keyascii)
     print(saltascii)
     return keyascii, saltascii
+
+def verify_key(password, key, salt):
+    kdf = Scrypt(
+        salt=salt,
+        length=32,
+        n=2 ** 14,
+        r=8,
+        p=1,
+    )
+    kdf.verify(password.encode(), key)
+
+
+
+
+
 
 space1 = Label(root, text=" ")
 space1.pack(pady=10)
