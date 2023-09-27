@@ -44,6 +44,9 @@ def find_username(data_list, inputs):
                 passwordBox.delete(0, END)
                 raise Exception("Incorrect password")
             # print("Welcome!, " + inputs["username"]) lo quito porque sino se imprime 3 veces
+            newsalt = os.urandom(16)
+            saltascii = encode_to_ascii(newsalt)
+            item["salt"] = saltascii
             return True
     return False
 
@@ -83,17 +86,15 @@ def calculate_key(inputs, salt):
     )
 
     key = kdf.derive(inputs.encode())
-    key64 = base64.b64encode(key)
-    keyascii = str(key64.decode("utf-8"))
-
-    salt64 = base64.b64encode(salt)
-    saltascii = str(salt64.decode("utf-8"))
+    keyascii = encode_to_ascii(key)
+    saltascii = encode_to_ascii(salt)
 
     print(keyascii)
     print(saltascii)
     return keyascii, saltascii
 
 def verify_key(password, key, salt):
+    salt = decode_to_bytes(salt)
     kdf = Scrypt(
         salt=salt,
         length=32,
@@ -101,9 +102,24 @@ def verify_key(password, key, salt):
         r=8,
         p=1,
     )
-    kdf.verify(password.encode(), key)
+    key64 = base64.b64encode(key)
+    keybytes = base64.b64decode(key64)
+    kdf.verify(password.encode(), keybytes)
+
+    return True
 
 
+def encode_to_ascii(key):
+    key64 = base64.b64encode(key)
+    keyascii = str(key64.decode("utf-8"))
+
+    return keyascii
+
+def decode_to_bytes(key):
+    key64 = key.encode('utf-8')
+    bytekey = base64.b64decode(key64)
+
+    return bytekey
 
 
 
