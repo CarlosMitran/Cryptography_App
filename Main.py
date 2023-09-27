@@ -7,6 +7,7 @@ import base64
 import re
 
 
+
 def write_input(json_file, inputs):
     list1 = open_json(json_file)
     found = find_username(list1, inputs)
@@ -36,13 +37,13 @@ def open_json(json_file):
 
 def find_username(data_list, inputs):
     for item in data_list:
-
         if item["username"] == inputs["username"]:
+            print("\ninputpwd: " + inputs["password"] + "\n")
             if verify_key(inputs["password"], item["password"], item["salt"]):
                 incorrectPasswordLabel = Label(root, text="Incorrect password", font='Century 12', fg="#FF5733")
                 incorrectPasswordLabel.pack()
                 passwordBox.delete(0, END)
-                raise Exception("Incorrect password")
+                #raise Exception("Incorrect password")
             # print("Welcome!, " + inputs["username"]) lo quito porque sino se imprime 3 veces
             newsalt = os.urandom(16)
             saltascii = encode_to_ascii(newsalt)
@@ -76,6 +77,26 @@ def get_values():
         welcomeLabel = Label(root, text="Welcome! " + user, font=('Century 20 bold'))
         welcomeLabel.place(x=25, y=25)
 
+space1 = Label(root, text=" ")
+space1.pack(pady=10)
+title = Label(root, text="Log in:", font=('Century 20 bold'))
+title.pack(pady=30)
+userLabel = ttk.Label(root, text="Username:", font=('Century 12'))
+userLabel.pack()
+userBox = ttk.Entry(root, font=('Century 12'), width=40)
+userBox.pack()
+space2 = Label(root, text=" ")
+space2.pack(pady=5)
+passwordLabel = ttk.Label(root, text="Password:", font=('Century 12'))
+passwordLabel.pack()
+passwordBox = ttk.Entry(root, show= '*', font=('Century 12'), width=40)
+passwordBox.pack()
+loginWarning = Label(root, text="(If user does not exist, it will be created)", font=('Century 12 italic'))
+loginWarning.pack(pady=10)
+
+loginButton = ttk.Button(root, text="Log in", command=get_values)
+loginButton.pack()
+
 def calculate_key(inputs, salt):
     kdf = Scrypt(
         salt=salt,
@@ -102,9 +123,16 @@ def verify_key(password, key, salt):
         r=8,
         p=1,
     )
-    key64 = base64.b64encode(key)
+    key64 = base64.b64encode(bytes(key, 'utf-8'))
     keybytes = base64.b64decode(key64)
-    kdf.verify(password.encode(), keybytes)
+    pwd = password.encode()
+    print("pwd: " + password)
+    print(password.encode())
+    print("key: " + key)
+    print(salt)
+    print(key64)
+    print(keybytes)
+    kdf.verify(pwd, keybytes)
 
     return True
 
@@ -124,23 +152,5 @@ def decode_to_bytes(key):
 
 
 
-space1 = Label(root, text=" ")
-space1.pack(pady=10)
-title = Label(root, text="Log in:", font=('Century 20 bold'))
-title.pack(pady=30)
-userLabel = ttk.Label(root, text="Username:", font=('Century 12'))
-userLabel.pack()
-userBox = ttk.Entry(root, font=('Century 12'), width=40)
-userBox.pack()
-space2 = Label(root, text=" ")
-space2.pack(pady=5)
-passwordLabel = ttk.Label(root, text="Password:", font=('Century 12'))
-passwordLabel.pack()
-passwordBox = ttk.Entry(root, show= '*', font=('Century 12'), width=40)
-passwordBox.pack()
-loginWarning = Label(root, text="(If user does not exist, it will be created)", font=('Century 12 italic'))
-loginWarning.pack(pady=10)
 
-loginButton = ttk.Button(root, text="Log in", command=get_values)
-loginButton.pack()
 root.mainloop()
