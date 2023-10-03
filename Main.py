@@ -15,7 +15,6 @@ def write_input(json_file, inputs):
     try:
         with open(json_file, "w", encoding="UTF-8", newline="") as file:
             json.dump(list1, file, indent=2)
-            print("User " + inputs["username"] + " created")
     except FileNotFoundError as ex:
         raise Exception("Wrong file or file path") from ex
 
@@ -47,14 +46,16 @@ def create_user(data_list, inputs):
                 return False
     adduser(inputs)
 
+
 def adduser(data_list):
     newsalt = os.urandom(16)
     key, saltascii = calculate_key(data_list["password"], newsalt)
     create_dict(data_list["username"], key, saltascii)
 
+
 def create_dict(user, password, salt):
     user_list = {"username": user, "password": password, "salt": salt}
-    write_input("test.json", user_list)
+    write_input("users.json", user_list)
 
 
 root = Tk()
@@ -66,14 +67,34 @@ def get_values():
     print(user)
     password = passwordBox.get()
     print(password)
-    if create_user(open_json("test.json"), {"username": user, "password": password}):
+    if create_user(open_json("users.json"), {"username": user, "password": password}):
         root.geometry("1500x950")
         for widget in root.winfo_children():
             widget.destroy()
         welcomeLabel = Label(root, text="Welcome! " + user, font=('Century 20 bold'))
         welcomeLabel.place(x=25, y=25)
+        read_data(user)
 
 
+
+def read_data(user):
+    item = find_user(open_json("userdata.json"), user)
+    if item is False:
+        print("Enter the following data\n")
+        DNI = input("Please enter DNI\n")
+        Hospital = input("Please input hospital\n")
+        Symptoms = input("Enter symptoms\n")
+        Date = input("Please enter date\n")
+        user_list = {"username": user, "DNI": DNI, "Hospital": Hospital, "Symptoms":Symptoms, "Date": Date}
+        write_input("userdata.json", user_list)
+
+    print(item)
+
+def find_user(data_list, user):
+    for item in data_list:
+        if item["username"] == user:
+            return item
+    return False
 
 def calculate_key(inputs, salt):
     kdf = Scrypt(
