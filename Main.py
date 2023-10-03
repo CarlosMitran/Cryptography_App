@@ -7,15 +7,19 @@ import cryptography.exceptions
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 import base64
 import re
+import time
 
 
-def write_input(json_file, inputs):
+def write_input(json_file, inputs):  #create user
     list1 = open_json(json_file)
     list1.append(inputs)
     try:
         with open(json_file, "w", encoding="UTF-8", newline="") as file:
             json.dump(list1, file, indent=2)
             print("User " + inputs["username"] + " created")
+            showUser(inputs)
+
+
     except FileNotFoundError as ex:
         raise Exception("Wrong file or file path") from ex
 
@@ -67,11 +71,8 @@ def get_values():
     password = passwordBox.get()
     print(password)
     if create_user(open_json("test.json"), {"username": user, "password": password}):
-        root.geometry("1500x950")
-        for widget in root.winfo_children():
-            widget.destroy()
-        welcomeLabel = Label(root, text="Welcome! " + user, font=('Century 20 bold'))
-        welcomeLabel.place(x=25, y=25)
+        print("Logged in user " + user)
+        showUser(inputs={"username": user, "password": password})
 
 
 
@@ -122,6 +123,13 @@ def decode_to_bytes(key):
     bytekey = base64.b64decode(key64)
 
     return bytekey
+
+def showUser(inputs):
+    root.geometry("1500x950")
+    for widget in root.winfo_children():
+        widget.destroy()
+    welcomeLabel = Label(root, text="Welcome! " + inputs["username"], font=('Century 20 bold'))
+    welcomeLabel.place(x=25, y=25)
 
 
 space1 = Label(root, text=" ")
