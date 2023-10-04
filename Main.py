@@ -9,6 +9,16 @@ import base64
 import re
 import time
 
+"""
+To do:
+
+-- Cifrado Autenticado
+-- Sign out
+-- Añadir datos y ver datos 
+-- Interfaz gráfica de los datos a mostrar, sign out, boton de ver datos, boton de añadir datos4
+
+"""
+
 
 def write_input(json_file, inputs):  # create user
     list1 = open_json(json_file)
@@ -45,8 +55,7 @@ def create_user(data_list, inputs):
             try:
                 verify_key(inputs["password"], item["password"], item["salt"])
                 newsalt = os.urandom(16)
-                saltencode = encode_to_ascii(newsalt)
-                item["salt"] = saltencode
+                item["password"], item["salt"] = calculate_key(inputs["password"], newsalt)
                 write_newsalt("users.json", data_list)
                 return True
 
@@ -84,20 +93,49 @@ def get_values():
     print(password)
     if create_user(open_json("users.json"), {"username": user, "password": password}):
         print("Logged in user " + user)
-        showUser(inputs={"username": user, "password": password})
+        answer = input("Do you want to write or read? W/R\n")
+        if answer == "W":
+            print("Enter the following data\n")
+            add_data(user)
+        if answer == "R":
+            for item in (open_json("userdata.json")):
+                if item["username"] == user:
+                    print(item)
 
+
+        showUser(inputs={"username": user, "password": password})
 
 
 def read_data(user):
     item = find_user(open_json("userdata.json"), user)
     if item is False:
         print("Enter the following data\n")
-        DNI = dnientry()
-        Hospital = Checktext("Hospital")
-        Symptoms = Checktext("Symptoms")
-        Date = Checkdate()
-        user_list = {"username": user, "DNI": DNI, "Hospital": Hospital, "Symptoms": Symptoms, "Date": Date}
-        write_input("userdata.json", user_list)
+        add_data(user)
+
+
+def add_data(user):
+    DNI = dnientry()
+    Nombre = Name("Nombre")
+    Apellido = Name("Apellido")
+    Hospital = Checktext("Hospital")
+    Symptoms = Checktext("Symptoms")
+    Date = Checkdate()
+    user_list = {"username": user, "Nombre": Nombre, "Apellido": Apellido,
+                 "DNI": DNI, "Hospital": Hospital, "Symptoms": Symptoms, "Date": Date}
+    write_input("userdata.json", user_list)
+
+
+def Name(str):
+    text = input("Please enter " + str)
+    try:
+        my_regex = re.compile(r'^[A-Z][A-Z a-z]*$')
+        res = my_regex.fullmatch(text)
+        if not res:
+            raise Exception("Only strings with capital letter at the beggining and no digits are allowed")
+    except KeyError as ex:
+        raise Exception("Bad label") from ex
+
+    return text
 
 
 def dnientry():
