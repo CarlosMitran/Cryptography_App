@@ -74,7 +74,8 @@ def adduser(data_list):
     key, saltascii = calculate_key(data_list["password"], newsalt)
     create_dict(data_list["username"], key, saltascii)
     read_data(data_list["username"])
-    showUser({"username": data_list["username"], "password": data_list["password"]})
+    # add_data(userBox.get())
+    # showUser({"username": data_list["username"], "password": data_list["password"]})
 
 
 def create_dict(user, password, salt):
@@ -93,17 +94,36 @@ def get_values():
     print(password)
     if create_user(open_json("users.json"), {"username": user, "password": password}):
         print("Logged in user " + user)
-        answer = input("Do you want to write or read? W/R\n")
-        if answer == "W":
+        # answer = input("Do you want to write or read? W/R\n")
+        for widget in root.winfo_children():
+            widget.destroy()
+        root.geometry("750x500")
+        optionLabel = Label(root, text="Select your option:", font=('Century 20 bold'))
+        optionLabel.pack(pady=80)
+
+        option = 0
+
+        def write_clicked(option):
+            option += 1
+            return option
+
+        def read_clicked(option):
+            option += 2
+            return option
+
+        writeButton = ttk.Button(root, text="Write data", command=write_clicked(option))
+        writeButton.pack()
+        readButton = ttk.Button(root, text="Read data", command=read_clicked(option))
+        readButton.pack()
+        if option == 1:
             print("Enter the following data\n")
             add_data(user)
-        if answer == "R":
+        if option == 2:
             for item in (open_json("userdata.json")):
                 if item["username"] == user:
                     print(item)
 
-
-        showUser(inputs={"username": user, "password": password})
+        # showUser(inputs={"username": user, "password": password})
 
 
 def read_data(user):
@@ -114,11 +134,34 @@ def read_data(user):
 
 
 def add_data(user):
-    DNI = dnientry()
-    Nombre = Name("Nombre")
-    Apellido = Name("Apellido")
-    Hospital = Checktext("Hospital")
-    Symptoms = Checktext("Symptoms")
+    # Enter user data screen
+    root.geometry("750x800")
+    dniLabel = ttk.Label(root, text="DNI:", font=('Century 12'))
+    dniLabel.pack()
+    dniBox = ttk.Entry(root, font=('Century 12'), width=40);
+    dniBox.pack()
+    nameLabel = ttk.Label(root, text="Name:", font=('Century 12'))
+    nameLabel.pack()
+    nameBox = ttk.Entry(root, font=('Century 12'), width=40);
+    nameBox.pack()
+    surnameLabel = ttk.Label(root, text="Surname:", font=('Century 12'))
+    surnameLabel.pack()
+    surnameBox = ttk.Entry(root, font=('Century 12'), width=40);
+    surnameBox.pack()
+    hospitalLabel = ttk.Label(root, text="Hospital:", font=('Century 12'))
+    hospitalLabel.pack()
+    hospitalBox = ttk.Entry(root, font=('Century 12'), width=40);
+    hospitalBox.pack()
+    symptomsLabel = ttk.Label(root, text="Symptoms:", font=('Century 12'))
+    symptomsLabel.pack()
+    symptomsBox = ttk.Entry(root, font=('Century 12'), width=40);
+    symptomsBox.pack()
+
+    DNI = dniBox.get()  # dnientry()
+    Nombre = nameBox.get()  # Name("Nombre: ")
+    Apellido = Checktext(surnameBox.get())  # Name("Apellido: ")
+    Hospital = Checktext(hospitalBox.get())  # Checktext("Hospital: ")
+    Symptoms = Checktext(symptomsBox.get())  # Checktext("Symptoms: ")
     Date = Checkdate()
     user_list = {"username": user, "Nombre": Nombre, "Apellido": Apellido,
                  "DNI": DNI, "Hospital": Hospital, "Symptoms": Symptoms, "Date": Date}
@@ -157,7 +200,7 @@ def Checktext(str):
         my_regex = re.compile(r'^[A-Z][A-Z a-z,]*$')
         res = my_regex.fullmatch(text)
         if not res:
-            raise Exception("Only strings with capital letter at the beggining and no digits are allowed")
+            raise Exception("Only strings with capital letter at the beginning and no digits are allowed")
     except KeyError as ex:
         raise Exception("Bad label") from ex
 
