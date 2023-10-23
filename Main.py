@@ -18,6 +18,7 @@ To do:
 
 """
 
+dataKey = ChaCha20Poly1305.generate_key()
 
 # Tkinter pantallas
 def login():
@@ -116,6 +117,7 @@ def get_values(user_value, password_value):
     if create_user(open_json("users.json"), {"username": user, "password": password}):
         return read_data(user)
 
+
 # Crear users y añadirles información
 def create_user(data_list, inputs):
     for item in data_list:
@@ -166,56 +168,24 @@ def get_data(data_list):
     user_list = {"username": data_list["username"], "Nombre": Nombre, "Apellido": Apellido,
                  "DNI": DNI, "Date": Date, "Hospital": Hospital, "Symptoms": Symptoms}
     if checkregex(user_list):
-        for item in user_list:
-            if item == "DNI":
-                dniBytes = bytes(DNI, "utf-8")
-                aad = bytes(user_list["username"], "utf-8")
-                dniKey = ChaCha20Poly1305.generate_key()
-                chachaDni = ChaCha20Poly1305(dniKey)
-                nonceDni = os.urandom(12)
-                dniEncrypted = chachaDni.encrypt(nonceDni, dniBytes, aad)
-                dniEncryptedAscii = encode_to_ascii(dniEncrypted)
-            if item == "Nombre":
-                nombreBytes = bytes(Nombre, "utf-8")
-                aad = bytes(user_list["username"], "utf-8")
-                nombreKey = ChaCha20Poly1305.generate_key()
-                chachaNombre = ChaCha20Poly1305(nombreKey)
-                nonceNombre = os.urandom(12)
-                nombreEncrypted = chachaNombre.encrypt(nonceNombre, nombreBytes, aad)
-                nombreEncryptedAscii = encode_to_ascii(nombreEncrypted)
-            if item == "Apellido":
-                apellidoBytes = bytes(Apellido, "utf-8")
-                aad = bytes(user_list["username"], "utf-8")
-                apellidoKey = ChaCha20Poly1305.generate_key()
-                chachaApellido = ChaCha20Poly1305(apellidoKey)
-                nonceApellido = os.urandom(12)
-                apellidoEncrypted = chachaApellido.encrypt(nonceApellido, apellidoBytes, aad)
-                apellidoEncryptedAscii = encode_to_ascii(apellidoEncrypted)
-            if item == "Hospital":
-                hospitalBytes = bytes(Hospital, "utf-8")
-                aad = bytes(user_list["username"], "utf-8")
-                hospitalKey = ChaCha20Poly1305.generate_key()
-                chachaHospital = ChaCha20Poly1305(hospitalKey)
-                nonceHospital = os.urandom(12)
-                hospitalEncrypted = chachaHospital.encrypt(nonceHospital, hospitalBytes, aad)
-                hospitalEncryptedAscii = encode_to_ascii(hospitalEncrypted)
+        aad = bytes(user_list["username"], "utf-8")
+        chacha = ChaCha20Poly1305(dataKey)
+        dniEncrypted, nonceDNI, dniEncryptedAscii = encrypt(DNI, aad, chacha)
+        nombreEncrypted, nonceNombre, nombreEncryptedAscii = encrypt(Nombre, aad, chacha)
+        apellidoEncrypted, nonceApellido, apellidoEncryptedAscii = encrypt(Apellido, aad, chacha)
+        hospitalEncrypted, nonceHospital, hospitalEncryptedAscii = encrypt(Hospital, aad, chacha)
 
-        user_list_encrypted = {"username": data_list["username"], "Nombre": nombreEncryptedAscii, "Apellido": apellidoEncryptedAscii,
-                              "DNI": dniEncryptedAscii, "Date": Date, "Hospital": hospitalEncryptedAscii, "Symptoms": Symptoms}
+        user_list_encrypted = {"username": data_list["username"], "Nombre": nombreEncryptedAscii,
+                               "nonceNombre": encode_to_ascii(nonceNombre),
+                               "Apellido": apellidoEncryptedAscii, "nonceApellido": encode_to_ascii(nonceApellido),
+                               "DNI": dniEncryptedAscii, "nonceDni": encode_to_ascii(nonceDNI), "Date": Date,
+                               "Hospital": hospitalEncryptedAscii, "nonceHospital": encode_to_ascii(nonceHospital),
+                               "Symptoms": Symptoms}
+
         write_input("userdata.json", user_list_encrypted)
+        decript(open_json("userdata.json"), dataKey)
 
-        #decrypt
-        dniDecrypt = chachaDni.decrypt(nonceDni, dniEncrypted, aad)
-        nombreDecrypt = chachaNombre.decrypt(nonceNombre, nombreEncrypted, aad)
-        apellidoDecrypt = chachaApellido.decrypt(nonceApellido, apellidoEncrypted, aad)
-        hospitalDecrypt = chachaHospital.decrypt(nonceHospital, hospitalEncrypted, aad)
-        dniAscii = encode_to_ascii(dniDecrypt)
-        nombreAscii = encode_to_ascii(nombreDecrypt)
-        apellidoAscii = encode_to_ascii(apellidoDecrypt)
-        hospitalAscii = encode_to_ascii(hospitalDecrypt)
-        user_list_decrypted = {"username": data_list["username"], "Nombre": nombreAscii, "Apellido": apellidoAscii,
-                              "DNI": dniAscii, "Date": Date, "Hospital": hospitalAscii, "Symptoms": Symptoms}
-        read_data(user_list_decrypted["username"])
+
 
 
 def find_user(data_list, user):
@@ -287,6 +257,43 @@ def verify_key(password, key, salt):
     return True
 
 
+def decript(data_list, key):
+    listdisplay = []
+    for item in data_list:
+        DNI = decode_to_bytes(item["DNI"])
+        Nombre = decode_to_bytes(item["Nombre"])
+        Apellido = decode_to_bytes(item["Apellido"])
+        Hospital = decode_to_bytes(item["Hospital"])
+
+        nonceDNI = decode_to_bytes(item["nonceDni"])
+        nonceNombre = decode_to_bytes(item["nonceNombre"])
+        nonceApellido = decode_to_bytes(item["nonceApellido"])
+        nonceHospital = decode_to_bytes(item["nonceHospital"])
+
+        aad = bytes(item["username"], "UTF-8")
+        chacha = ChaCha20Poly1305(key)
+        dniDecrypt = chacha.decrypt(nonceDNI, DNI, aad)
+        nombreDecrypt = chacha.decrypt(nonceNombre, Nombre, aad)
+        apellidoDecrypt = chacha.decrypt(nonceApellido, Apellido, aad)
+        hospitalDecrypt = chacha.decrypt(nonceHospital, Hospital, aad)
+        dniAscii = str(dniDecrypt, "UTF-8")
+        nombreAscii = str(nombreDecrypt, "UTF-8")
+        apellidoAscii = str(apellidoDecrypt, "UTF-8")
+        hospitalAscii = str(hospitalDecrypt, "UTF-8")
+        listdisplay.append({"username": item["username"], "Nombre": nombreAscii, "Apellido": apellidoAscii,
+                            "DNI": dniAscii, "Date": item["Date"], "Hospital": hospitalAscii,
+                            "Symptoms": item["Symptoms"]})
+    display_data(listdisplay)
+
+
+def encrypt(to_encrypt, aad, chacha):
+    dataBytes = bytes(to_encrypt, "utf-8")
+    noncedata = os.urandom(12)
+    dataEncrypted = chacha.encrypt(noncedata, dataBytes, aad)
+    dataEncryptedAscii = encode_to_ascii(dataEncrypted)
+    return dataEncrypted, noncedata, dataEncryptedAscii
+
+
 def encode_to_ascii(key):
     key64 = base64.b64encode(key)
     keyascii = key64.decode("ascii")
@@ -318,9 +325,10 @@ def checkregex(list1):
     Hospital = Checktext(list1["Hospital"])
     Symptoms = Checktext(list1["Symptoms"])
     Date = Checkdate(list1["Date"])
-    if any((Nombre, Apellido, DNI, Hospital, Symptoms, Date)) is False:
-        return False
-    return True
+    if all((Nombre, Apellido, DNI, Hospital, Symptoms, Date)) is str:
+        return True
+    return False
+
 
 def dnientry(DNI):
     try:
