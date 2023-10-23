@@ -1,3 +1,4 @@
+import tkinter
 from tkinter import *
 from tkinter import ttk
 import json
@@ -10,15 +11,11 @@ import base64
 import re
 import time
 
-"""
-To do:
+"""Esto es una mala práctica, y la key debería ser generada y guerdada fuera de el código fuente y del storage, pero para el contexto 
+específico de la práctica es un mal necesario"""
 
--- Cifrado Autenticado
+dataKey = b"\xc2\x03\x82N\x8b\x8a\xca\xb3YN.\xac\xe5}'\xa1\xb5\x06\xf0\xe02\xf6\x8d\x1c.\xbf@\xc9\xe5\xa0\x8f\xb2"
 
-
-"""
-
-dataKey = ChaCha20Poly1305.generate_key()
 
 # Tkinter pantallas
 def login():
@@ -84,19 +81,26 @@ def display_data(list):
     destroy_widgets()
     root.geometry("750x800")
     DNI = ""
-    for item in list:
+
+    readlist = decript(list)
+    for item in readlist:
         if item["DNI"] != DNI:
+            space1 = Label(root, text=" ")
+            space1.pack(pady=10)
             dniLabel = ttk.Label(root, text=item["DNI"], font=('Century 12'))
             dniLabel.pack()
             nameLabel = ttk.Label(root, text=item["Nombre"] + " " + item["Apellido"], font=('Century 12'))
             nameLabel.pack()
+
         dateLabel = ttk.Label(root, text=item["Date"], font='Century 12')
         dateLabel.pack()
         hospitalLabel = ttk.Label(root, text=item["Hospital"], font='Century 12')
         hospitalLabel.pack()
         symptomsLabel = ttk.Label(root, text=item["Symptoms"], font='Century 12')
         symptomsLabel.pack()
+
         DNI = item["DNI"]
+
 
     writeButton = ttk.Button(root, text="Write new data", command=lambda: add_data(item["username"]))
     writeButton.pack()
@@ -183,9 +187,7 @@ def get_data(data_list):
                                "Symptoms": Symptoms}
 
         write_input("userdata.json", user_list_encrypted)
-        decript(open_json("userdata.json"), dataKey)
-
-
+        return read_data(user_list["username"])
 
 
 def find_user(data_list, user):
@@ -257,7 +259,7 @@ def verify_key(password, key, salt):
     return True
 
 
-def decript(data_list, key):
+def decript(data_list):
     listdisplay = []
     for item in data_list:
         DNI = decode_to_bytes(item["DNI"])
@@ -271,7 +273,7 @@ def decript(data_list, key):
         nonceHospital = decode_to_bytes(item["nonceHospital"])
 
         aad = bytes(item["username"], "UTF-8")
-        chacha = ChaCha20Poly1305(key)
+        chacha = ChaCha20Poly1305(dataKey)
         dniDecrypt = chacha.decrypt(nonceDNI, DNI, aad)
         nombreDecrypt = chacha.decrypt(nonceNombre, Nombre, aad)
         apellidoDecrypt = chacha.decrypt(nonceApellido, Apellido, aad)
@@ -283,7 +285,7 @@ def decript(data_list, key):
         listdisplay.append({"username": item["username"], "Nombre": nombreAscii, "Apellido": apellidoAscii,
                             "DNI": dniAscii, "Date": item["Date"], "Hospital": hospitalAscii,
                             "Symptoms": item["Symptoms"]})
-    return display_data(listdisplay)
+    return listdisplay
 
 
 def encrypt(to_encrypt, aad, chacha):
