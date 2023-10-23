@@ -5,6 +5,7 @@ import os
 
 import cryptography.exceptions
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 import base64
 import re
 import time
@@ -165,10 +166,56 @@ def get_data(data_list):
     user_list = {"username": data_list["username"], "Nombre": Nombre, "Apellido": Apellido,
                  "DNI": DNI, "Date": Date, "Hospital": Hospital, "Symptoms": Symptoms}
     if checkregex(user_list):
-        write_input("userdata.json", user_list)
-        read_data(data_list["username"])
+        for item in user_list:
+            if item == "DNI":
+                dniBytes = bytes(DNI, "utf-8")
+                aad = bytes(user_list["username"], "utf-8")
+                dniKey = ChaCha20Poly1305.generate_key()
+                chachaDni = ChaCha20Poly1305(dniKey)
+                nonceDni = os.urandom(12)
+                dniEncrypted = chachaDni.encrypt(nonceDni, dniBytes, aad)
+                dniEncryptedAscii = encode_to_ascii(dniEncrypted)
+            if item == "Nombre":
+                nombreBytes = bytes(Nombre, "utf-8")
+                aad = bytes(user_list["username"], "utf-8")
+                nombreKey = ChaCha20Poly1305.generate_key()
+                chachaNombre = ChaCha20Poly1305(nombreKey)
+                nonceNombre = os.urandom(12)
+                nombreEncrypted = chachaNombre.encrypt(nonceNombre, nombreBytes, aad)
+                nombreEncryptedAscii = encode_to_ascii(nombreEncrypted)
+            if item == "Apellido":
+                apellidoBytes = bytes(Apellido, "utf-8")
+                aad = bytes(user_list["username"], "utf-8")
+                apellidoKey = ChaCha20Poly1305.generate_key()
+                chachaApellido = ChaCha20Poly1305(apellidoKey)
+                nonceApellido = os.urandom(12)
+                apellidoEncrypted = chachaApellido.encrypt(nonceApellido, apellidoBytes, aad)
+                apellidoEncryptedAscii = encode_to_ascii(apellidoEncrypted)
+            if item == "Hospital":
+                hospitalBytes = bytes(Hospital, "utf-8")
+                aad = bytes(user_list["username"], "utf-8")
+                hospitalKey = ChaCha20Poly1305.generate_key()
+                chachaHospital = ChaCha20Poly1305(hospitalKey)
+                nonceHospital = os.urandom(12)
+                hospitalEncrypted = chachaHospital.encrypt(nonceHospital, hospitalBytes, aad)
+                hospitalEncryptedAscii = encode_to_ascii(hospitalEncrypted)
 
+        user_list_encrypted = {"username": data_list["username"], "Nombre": nombreEncryptedAscii, "Apellido": apellidoEncryptedAscii,
+                              "DNI": dniEncryptedAscii, "Date": Date, "Hospital": hospitalEncryptedAscii, "Symptoms": Symptoms}
+        write_input("userdata.json", user_list_encrypted)
 
+        #decrypt
+        dniDecrypt = chachaDni.decrypt(nonceDni, dniEncrypted, aad)
+        nombreDecrypt = chachaNombre.decrypt(nonceNombre, nombreEncrypted, aad)
+        apellidoDecrypt = chachaApellido.decrypt(nonceApellido, apellidoEncrypted, aad)
+        hospitalDecrypt = chachaHospital.decrypt(nonceHospital, hospitalEncrypted, aad)
+        dniAscii = encode_to_ascii(dniDecrypt)
+        nombreAscii = encode_to_ascii(nombreDecrypt)
+        apellidoAscii = encode_to_ascii(apellidoDecrypt)
+        hospitalAscii = encode_to_ascii(hospitalDecrypt)
+        user_list_decrypted = {"username": data_list["username"], "Nombre": nombreAscii, "Apellido": apellidoAscii,
+                              "DNI": dniAscii, "Date": Date, "Hospital": hospitalAscii, "Symptoms": Symptoms}
+        read_data(user_list_decrypted["username"])
 
 
 def find_user(data_list, user):
