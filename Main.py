@@ -283,7 +283,7 @@ def decript(data_list, key):
         listdisplay.append({"username": item["username"], "Nombre": nombreAscii, "Apellido": apellidoAscii,
                             "DNI": dniAscii, "Date": item["Date"], "Hospital": hospitalAscii,
                             "Symptoms": item["Symptoms"]})
-    display_data(listdisplay)
+    return display_data(listdisplay)
 
 
 def encrypt(to_encrypt, aad, chacha):
@@ -325,8 +325,9 @@ def checkregex(list1):
     Hospital = Checktext(list1["Hospital"])
     Symptoms = Checktext(list1["Symptoms"])
     Date = Checkdate(list1["Date"])
-    if all((Nombre, Apellido, DNI, Hospital, Symptoms, Date)) is str:
+    if all((Nombre, Apellido, DNI, Hospital, Symptoms, Date)) is True:
         return True
+
     return False
 
 
@@ -343,7 +344,7 @@ def dnientry(DNI):
     except KeyError as ex:
         raise Exception("Bad label") from ex
 
-    return DNI
+    return True
 
 
 def Checktext(text):
@@ -359,7 +360,7 @@ def Checktext(text):
     except KeyError as ex:
         raise Exception("Bad label") from ex
 
-    return text
+    return True
 
 
 def Checkdate(date):
@@ -373,7 +374,7 @@ def Checkdate(date):
     except KeyError as ex:
         raise Exception("Bad label") from ex
 
-    return date
+    return True
 
 
 # Main function
