@@ -81,8 +81,7 @@ def display_data(list):
     destroy_widgets()
     root.geometry("750x800")
     DNI = ""
-
-    readlist = decript(list)
+    readlist= decript(list)
     for item in readlist:
         if item["DNI"] != DNI:
             space1 = Label(root, text=" ")
@@ -172,23 +171,34 @@ def get_data(data_list):
     user_list = {"username": data_list["username"], "Nombre": Nombre, "Apellido": Apellido,
                  "DNI": DNI, "Date": Date, "Hospital": Hospital, "Symptoms": Symptoms}
     if checkregex(user_list):
-        aad = bytes(user_list["username"], "utf-8")
-        chacha = ChaCha20Poly1305(dataKey)
-        dniEncrypted, nonceDNI, dniEncryptedAscii = encrypt(DNI, aad, chacha)
-        nombreEncrypted, nonceNombre, nombreEncryptedAscii = encrypt(Nombre, aad, chacha)
-        apellidoEncrypted, nonceApellido, apellidoEncryptedAscii = encrypt(Apellido, aad, chacha)
-        hospitalEncrypted, nonceHospital, hospitalEncryptedAscii = encrypt(Hospital, aad, chacha)
-
-        user_list_encrypted = {"username": data_list["username"], "Nombre": nombreEncryptedAscii,
-                               "nonceNombre": encode_to_ascii(nonceNombre),
-                               "Apellido": apellidoEncryptedAscii, "nonceApellido": encode_to_ascii(nonceApellido),
-                               "DNI": dniEncryptedAscii, "nonceDni": encode_to_ascii(nonceDNI), "Date": Date,
-                               "Hospital": hospitalEncryptedAscii, "nonceHospital": encode_to_ascii(nonceHospital),
-                               "Symptoms": Symptoms}
-
-        write_input("userdata.json", user_list_encrypted)
+        write_input("userdata.json", encryptlist(user_list))
         return read_data(user_list["username"])
 
+def encryptlist(user_list):
+    aad = bytes(user_list["username"], "utf-8")
+    chacha = ChaCha20Poly1305(dataKey)
+    dniEncrypted, nonceDNI, dniEncryptedAscii = encrypt(user_list["DNI"], aad, chacha)
+    nombreEncrypted, nonceNombre, nombreEncryptedAscii = encrypt(user_list["Nombre"], aad, chacha)
+    apellidoEncrypted, nonceApellido, apellidoEncryptedAscii = encrypt(user_list["Apellido"], aad, chacha)
+    hospitalEncrypted, nonceHospital, hospitalEncryptedAscii = encrypt(user_list["Hospital"], aad, chacha)
+
+    user_list_encrypted = {"username": user_list["username"], "Nombre": nombreEncryptedAscii,
+                            "nonceNombre": encode_to_ascii(nonceNombre),
+                            "Apellido": apellidoEncryptedAscii, "nonceApellido": encode_to_ascii(nonceApellido),
+                            "DNI": dniEncryptedAscii, "nonceDni": encode_to_ascii(nonceDNI), "Date": user_list["Date"],
+                            "Hospital": hospitalEncryptedAscii, "nonceHospital": encode_to_ascii(nonceHospital),
+                            "Symptoms": user_list["Symptoms"]}
+
+    return user_list_encrypted
+
+
+def erase_user(user):
+    list1 = open_json("userdata.json")
+    list2 = []
+    for item in list1:
+        if item["username"] != user:
+            list2.append(item)
+    return list2
 
 def find_user(data_list, user):
     list1 = []
@@ -211,6 +221,14 @@ def write_input(json_file, inputs):  # create user
             json.dump(list1, file, indent=2)
     except FileNotFoundError as ex:
         raise Exception("Wrong file or file path") from ex
+
+def write_newsalt(json_file, data_list):
+    try:
+        with open(json_file, "w", encoding="UTF-8", newline="") as file:
+            json.dump(data_list, file, indent=2)
+    except FileNotFoundError as ex:
+        raise Exception("Wrong file or file path") from ex
+
 
 
 def open_json(json_file):
@@ -262,6 +280,7 @@ def verify_key(password, key, salt):
 def decript(data_list):
     listdisplay = []
     for item in data_list:
+        username = item["username"]
         DNI = decode_to_bytes(item["DNI"])
         Nombre = decode_to_bytes(item["Nombre"])
         Apellido = decode_to_bytes(item["Apellido"])
@@ -285,6 +304,13 @@ def decript(data_list):
         listdisplay.append({"username": item["username"], "Nombre": nombreAscii, "Apellido": apellidoAscii,
                             "DNI": dniAscii, "Date": item["Date"], "Hospital": hospitalAscii,
                             "Symptoms": item["Symptoms"]})
+    newlist = []
+    for item in listdisplay:
+        #Rotación de claves
+        newlist.append(encryptlist(item))
+    oldlist = erase_user(username)
+    completelist = oldlist + newlist
+    write_newsalt("userdata.json", completelist)
     return listdisplay
 
 
@@ -310,13 +336,6 @@ def decode_to_bytes(key):
 
     return bytekey
 
-
-def write_newsalt(json_file, data_list):
-    try:
-        with open(json_file, "w", encoding="UTF-8", newline="") as file:
-            json.dump(data_list, file, indent=2)
-    except FileNotFoundError as ex:
-        raise Exception("Wrong file or file path") from ex
 
 
 # Regex checks
