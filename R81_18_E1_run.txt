@@ -1,0 +1,9 @@
+La aplicación se encuentra en un solo archivo main.py. El interpreter de python que lo ejecute debe tener instalada la librería 'Cryptography' mediante el comando 'pip install cryptography'.
+
+En la ventana de login, introducir un usuario y contraseña que se desee para registrarse (dado que no hay ningún usuario creado). Esto creará un 'users.json' con esa información. 
+
+Pide que se introduzca información de un diagnóstico de un paciente, dado que ese usuario no ha registrado nada todavia. Una vez guardado, se crea un 'userdata.json' con esa información y se muestra una lista con los diagnósticos guardados, pudiendo añadir más con 'Write more data' o cerrar sesión con 'Log out'.
+
+La próxima vez que se inicia sesión con ese usuario se muestran los diagnósticos guardados y la posibilidad de añadir nuevos.
+
+Si se registra otro usuario, se repite el proceso anterior y se solo verá los diagnósticos que él ha guardado, no los del resto de usuarios.
