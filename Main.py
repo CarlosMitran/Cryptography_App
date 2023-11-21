@@ -7,13 +7,16 @@ import os
 import cryptography.exceptions
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 import base64
 import re
 import time
 
 """Esto es una mala práctica, y la key debería ser generada y guerdada fuera de el código fuente y del storage, pero para el contexto 
 específico de la práctica es un mal necesario"""
-
 dataKey = b"\xc2\x03\x82N\x8b\x8a\xca\xb3YN.\xac\xe5}'\xa1\xb5\x06\xf0\xe02\xf6\x8d\x1c.\xbf@\xc9\xe5\xa0\x8f\xb2"
 
 
@@ -39,6 +42,24 @@ def login():
     loginWarning.pack(pady=10)
     loginButton = ttk.Button(root, text="Log in", command=lambda: get_values(userBox, passwordBox))
     loginButton.pack()
+
+
+def pantalla_pass_firma(data_list):
+    destroy_widgets()
+    root.geometry("750x500")
+    space1 = Label(root, text=" ")
+    space1.pack(pady=10)
+    title = Label(root, text="Al ser un nuevo usuario,\n necesita crear una contraseña de firmado",
+                  font=('Century 20 bold'))
+    title.pack(pady=30)
+    space2 = Label(root, text=" ")
+    space2.pack(pady=5)
+    passwordLabel = ttk.Label(root, text="Password:", font=('Century 12'))
+    passwordLabel.pack()
+    passwordBox = ttk.Entry(root, show='*', font=('Century 12'), width=40)
+    passwordBox.pack()
+    firmar = ttk.Button(root, text="Firmar", command=lambda: guardar_pass_firma(data_list, str(passwordBox.get())))
+    firmar.pack()
 
 
 def add_data(user):
@@ -81,7 +102,7 @@ def display_data(list):
     destroy_widgets()
     root.geometry("750x800")
     DNI = ""
-    readlist= decript(list)
+    readlist = decript(list)
     for item in readlist:
         if item["DNI"] != DNI:
             space1 = Label(root, text=" ")
@@ -100,11 +121,35 @@ def display_data(list):
 
         DNI = item["DNI"]
 
-
     writeButton = ttk.Button(root, text="Write new data", command=lambda: add_data(item["username"]))
     writeButton.pack()
-    LogOutButton = ttk.Button(root, text="Log out", command=login)
+    LogOutButton = ttk.Button(root, text="Log out", command=lambda: login)
     LogOutButton.pack()
+    GenerateFirma = ttk.Button(root, text="Generar firma", command=lambda: pantalla_firma(readlist))
+    GenerateFirma.pack()
+
+
+def pantalla_firma(readlist):
+    destroy_widgets()
+    root.geometry("750x500")
+    userLabel = ttk.Label(root, text="Introduzca el nombre del paciente", font=('Century 12'))
+    userLabel.pack()
+    userBox = ttk.Entry(root, font=('Century 12'), width=40)
+    userBox.pack()
+    space1 = Label(root, text=" ")
+    space1.pack(pady=10)
+    title = Label(root, text="Introduzca la contraseña de firmado", font=('Century 20 bold'))
+    title.pack(pady=30)
+    space2 = Label(root, text=" ")
+    space2.pack(pady=5)
+    passwordLabel = ttk.Label(root, text="Password:", font=('Century 12'))
+    passwordLabel.pack()
+    passwordBox = ttk.Entry(root, show='*', font=('Century 12'), width=40)
+    passwordBox.pack()
+    loginWarning = Label(root, text="(If user does not exist, it will be created)", font=('Century 12 italic'))
+    loginWarning.pack(pady=10)
+    firmar = ttk.Button(root, text="Firmar", command=lambda: generate_firma(readlist, str(passwordBox.get()), userBox.get()))
+    firmar.pack()
 
 
 def destroy_widgets():
@@ -137,15 +182,21 @@ def create_user(data_list, inputs):
                 incorrectPasswordLabel.pack()
 
                 return False
-    return adduser(inputs)
+    return pantalla_pass_firma(inputs)
 
 
 # Crea un user + contraseña y cifra
-def adduser(data_list):
+def adduser(data_list, passfirma):
     newsalt = os.urandom(16)
     key, saltascii = calculate_key(data_list["password"], newsalt)
     create_dict(data_list["username"], key, saltascii)
+    crearclaves(data_list["username"], passfirma)
     read_data(data_list["username"])
+
+
+def guardar_pass_firma(data_list, password):
+    write_input("firmas.json", {"Usuario": data_list["username"], "Password": password})
+    adduser(data_list, password)
 
 
 # Crea un diccionario donde guardar user contraseña cifrada encodedada a base 64 y salt encodeada a b64 y la escribe al json
@@ -174,6 +225,7 @@ def get_data(data_list):
         write_input("userdata.json", encryptlist(user_list))
         return read_data(user_list["username"])
 
+
 def encryptlist(user_list):
     aad = bytes(user_list["username"], "utf-8")
     chacha = ChaCha20Poly1305(dataKey)
@@ -183,11 +235,11 @@ def encryptlist(user_list):
     hospitalEncrypted, nonceHospital, hospitalEncryptedAscii = encrypt(user_list["Hospital"], aad, chacha)
 
     user_list_encrypted = {"username": user_list["username"], "Nombre": nombreEncryptedAscii,
-                            "nonceNombre": encode_to_ascii(nonceNombre),
-                            "Apellido": apellidoEncryptedAscii, "nonceApellido": encode_to_ascii(nonceApellido),
-                            "DNI": dniEncryptedAscii, "nonceDni": encode_to_ascii(nonceDNI), "Date": user_list["Date"],
-                            "Hospital": hospitalEncryptedAscii, "nonceHospital": encode_to_ascii(nonceHospital),
-                            "Symptoms": user_list["Symptoms"]}
+                           "nonceNombre": encode_to_ascii(nonceNombre),
+                           "Apellido": apellidoEncryptedAscii, "nonceApellido": encode_to_ascii(nonceApellido),
+                           "DNI": dniEncryptedAscii, "nonceDni": encode_to_ascii(nonceDNI), "Date": user_list["Date"],
+                           "Hospital": hospitalEncryptedAscii, "nonceHospital": encode_to_ascii(nonceHospital),
+                           "Symptoms": user_list["Symptoms"]}
 
     return user_list_encrypted
 
@@ -199,6 +251,7 @@ def erase_user(user):
         if item["username"] != user:
             list2.append(item)
     return list2
+
 
 def find_user(data_list, user):
     list1 = []
@@ -222,13 +275,13 @@ def write_input(json_file, inputs):  # create user
     except FileNotFoundError as ex:
         raise Exception("Wrong file or file path") from ex
 
+
 def write_newsalt(json_file, data_list):
     try:
         with open(json_file, "w", encoding="UTF-8", newline="") as file:
             json.dump(data_list, file, indent=2)
     except FileNotFoundError as ex:
         raise Exception("Wrong file or file path") from ex
-
 
 
 def open_json(json_file):
@@ -277,6 +330,67 @@ def verify_key(password, key, salt):
     return True
 
 
+def generate_firma(readlist, passwordbox, username):
+    doctorName = False
+    password = bytes(passwordbox, "utf-8")
+    for item in readlist:
+        if (item["Nombre"] == username):
+            doctorName = item["username"]
+
+    if doctorName is False:
+        return False
+
+    with open(doctorName + ".txt", 'rb') as file:
+        # Read the entire content of the file
+        private_key = serialization.load_pem_private_key(
+            file.read(),
+            password=password,
+        )
+    messagelist = []
+    for item in readlist:
+        if item["username"] == username:
+            messagelist.append(item)
+    messagebytes = bytes(messagelist)
+    signature = private_key.sign(
+        messagebytes,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+
+    public_key = private_key.public_key()
+    public_key.verify(
+        signature,
+        messagebytes,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+    space1 = Label(root, text=" ")
+    space1.pack(pady=10)
+    title = Label(root, text="Firmado y verificado con éxito", font=('Century 20 bold'))
+    title.pack(pady=30)
+
+
+
+def crearclaves(username, passfirma):
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+    )
+    pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.BestAvailableEncryption(str.encode(passfirma))
+    )
+    with open(username + ".txt", 'wb') as f:
+        f.write(pem)
+
+
 def decript(data_list):
     listdisplay = []
     for item in data_list:
@@ -306,7 +420,7 @@ def decript(data_list):
                             "Symptoms": item["Symptoms"]})
     newlist = []
     for item in listdisplay:
-        #Rotación de claves
+        # Rotación de claves
         newlist.append(encryptlist(item))
     oldlist = erase_user(username)
     completelist = oldlist + newlist
@@ -335,7 +449,6 @@ def decode_to_bytes(key):
     bytekey = base64.b64decode(key64)
 
     return bytekey
-
 
 
 # Regex checks
@@ -370,7 +483,7 @@ def dnientry(DNI):
 
 def Checktext(text):
     try:
-        my_regex = re.compile(r'^[A-Z][A-Z a-z,]*$')
+        my_regex = re.compile(r'^[A-Z][A-Z a-z]*$')
         res = my_regex.fullmatch(text)
         if not res:
             incorrectLabel = Label(root,
