@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 import base64
 import re
 import time
@@ -359,10 +360,29 @@ def generate_firma(readlist, passwordbox, username):
         ),
         hashes.SHA256()
     )
+    with open(username+"signedData"+".txt", "w") as f:
+        for item in readlist:
+            f.write(item["DNI"])
+            f.write(item["Nombre"] + " " + item["Apellido"])
+            f.write(item["Symptoms"])
+            f.write(item["Hospital"])
+            f.write(item["Date"])
 
-    public_key = private_key.public_key()
+
+    with open(doctorName +"Signature" +username + ".txt", "wb") as sig:
+        sig.write(signature)
+
+    with open(doctorName+"pub"+".txt", "rb") as pub_key_file:
+
+        public_key = serialization.load_pem_public_key(
+            pub_key_file.read(),
+
+        )
+    with open(doctorName+"Signature"+username+".txt", rb) as sig:
+        signatureload = sig.read()
+
     public_key.verify(
-        signature,
+        signatureload,
         messagebytes,
         padding.PSS(
             mgf=padding.MGF1(hashes.SHA256()),
@@ -376,20 +396,30 @@ def generate_firma(readlist, passwordbox, username):
     title.pack(pady=30)
 
 
-
 def crearclaves(username, passfirma):
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
+    )
+    public_key = private_key.public_key()
+
+    pem2 = public_key.public_bytes(
+
+        encoding=serialization.Encoding.PEM,
+
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+
     )
     pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.BestAvailableEncryption(str.encode(passfirma))
     )
+
     with open(username + ".txt", 'wb') as f:
         f.write(pem)
-
+    with open(username + "pub.txt", "wb") as pubf:
+        pubf.write(pem2)
 
 def decript(data_list):
     listdisplay = []
