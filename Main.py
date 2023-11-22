@@ -149,7 +149,8 @@ def pantalla_firma(readlist):
     passwordBox.pack()
     loginWarning = Label(root, text="(If user does not exist, it will be created)", font=('Century 12 italic'))
     loginWarning.pack(pady=10)
-    firmar = ttk.Button(root, text="Firmar", command=lambda: generate_firma(readlist, str(passwordBox.get()), userBox.get()))
+    firmar = ttk.Button(root, text="Firmar",
+                        command=lambda: generate_firma(readlist, str(passwordBox.get()), userBox.get()))
     firmar.pack()
 
 
@@ -349,9 +350,21 @@ def generate_firma(readlist, passwordbox, username):
         )
     messagelist = []
     for item in readlist:
-        if item["username"] == username:
+        if item["username"] == doctorName:
             messagelist.append(item)
-    messagebytes = bytes(messagelist)
+
+    stringmessage = ""
+
+    for item in messagelist:
+        stringmessage = stringmessage + (item["DNI"]) + "\n"
+        stringmessage = stringmessage + (item["Nombre"]) + "\n"
+        stringmessage = stringmessage + (item["Apellido"]) + "\n"
+        stringmessage = stringmessage + (item["Symptoms"]) + "\n"
+        stringmessage = stringmessage + (item["Hospital"]) + "\n"
+        stringmessage = stringmessage + (item["Date"]) + "\n"
+
+    messagebytes = bytes(stringmessage, "utf-8")
+
     signature = private_key.sign(
         messagebytes,
         padding.PSS(
@@ -360,36 +373,36 @@ def generate_firma(readlist, passwordbox, username):
         ),
         hashes.SHA256()
     )
-    with open(username+"signedData"+".txt", "w") as f:
-        for item in readlist:
-            f.write(item["DNI"])
-            f.write(item["Nombre"] + " " + item["Apellido"])
-            f.write(item["Symptoms"])
-            f.write(item["Hospital"])
-            f.write(item["Date"])
+    with open(username + "signedData" + ".txt", "w") as f:
+        f.write(stringmessage)
 
-
-    with open(doctorName +"Signature" +username + ".txt", "wb") as sig:
+    with open(doctorName + "Signature" + username + ".txt", "wb") as sig:
         sig.write(signature)
 
-    with open(doctorName+"pub"+".txt", "rb") as pub_key_file:
+    with open(doctorName + "pub" + ".txt", "rb") as pub_key_file:
 
         public_key = serialization.load_pem_public_key(
             pub_key_file.read(),
 
         )
-    with open(doctorName+"Signature"+username+".txt", rb) as sig:
+
+    with open(doctorName + "Signature" + username + ".txt", "rb") as sig:
         signatureload = sig.read()
+    with open(username + "signedData" + ".txt", "r") as file:
+        messageload = file.read()
+
+    messageloadbytes = bytes(messageload, "utf-8")
 
     public_key.verify(
         signatureload,
-        messagebytes,
+        messageloadbytes,
         padding.PSS(
             mgf=padding.MGF1(hashes.SHA256()),
             salt_length=padding.PSS.MAX_LENGTH
         ),
         hashes.SHA256()
     )
+
     space1 = Label(root, text=" ")
     space1.pack(pady=10)
     title = Label(root, text="Firmado y verificado con éxito", font=('Century 20 bold'))
@@ -420,6 +433,7 @@ def crearclaves(username, passfirma):
         f.write(pem)
     with open(username + "pub.txt", "wb") as pubf:
         pubf.write(pem2)
+
 
 def decript(data_list):
     listdisplay = []
