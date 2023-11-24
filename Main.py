@@ -15,6 +15,9 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key
 import base64
 import re
 import time
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes
 
 """Esto es una mala práctica, y la key debería ser generada y guerdada fuera de el código fuente y del storage, pero para el contexto 
 específico de la práctica es un mal necesario"""
@@ -59,7 +62,7 @@ def pantalla_pass_firma(data_list):
     passwordLabel.pack()
     passwordBox = ttk.Entry(root, show='*', font=('Century 12'), width=40)
     passwordBox.pack()
-    firmar = ttk.Button(root, text="Firmar", command=lambda: guardar_pass_firma(data_list, str(passwordBox.get())))
+    firmar = ttk.Button(root, text="Firmar", command=lambda: adduser(data_list, str(passwordBox.get())))
     firmar.pack()
 
 
@@ -196,9 +199,6 @@ def adduser(data_list, passfirma):
     read_data(data_list["username"])
 
 
-def guardar_pass_firma(data_list, password):
-    write_input("firmas.json", {"Usuario": data_list["username"], "Password": password})
-    adduser(data_list, password)
 
 
 # Crea un diccionario donde guardar user contraseña cifrada encodedada a base 64 y salt encodeada a b64 y la escribe al json
@@ -407,6 +407,86 @@ def generate_firma(readlist, passwordbox, username):
     space1.pack(pady=10)
     title = Label(root, text="Firmado y verificado con éxito", font=('Century 20 bold'))
     title.pack(pady=30)
+    generarcertificados(doctorName, password, username)
+
+
+
+
+def generarcertificados(doctorName, password, pacient):
+
+    with open(doctorName + ".txt", 'rb') as file:
+        # Read the entire content of the file
+        key = serialization.load_pem_private_key(
+            file.read(),
+            password=password,
+        )
+
+    csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+
+        # Provide various details about who we are.
+
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "California"),
+
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
+
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "My Company"),
+
+        x509.NameAttribute(NameOID.COMMON_NAME, "mysite.com"),
+
+    ])).add_extension(
+
+        x509.SubjectAlternativeName([
+
+            # Describe what sites we want this certificate for.
+
+            x509.DNSName("mysite.com"),
+
+            x509.DNSName("www.mysite.com"),
+
+            x509.DNSName("subdomain.mysite.com"),
+
+        ]),
+
+        critical=False,
+
+        # Sign the CSR with our private key.
+
+    ).sign(key, hashes.SHA256())
+
+    # Write our CSR out to disk.
+
+    with open("CSR/certificado"+pacient+".pem", "wb") as f:
+        f.write(csr.public_bytes(serialization.Encoding.PEM))
+
+    readcert(pacient)
+
+
+
+
+def readcert(username):
+    with open("ac1cert.pem", "rb") as f:
+        pem_data = f.read()
+    cert = x509.load_pem_x509_certificate(pem_data)
+    public_key = cert.public_key()
+    signatureload = cert.signature
+    with open(username + "signedData" + ".txt", "r") as file:
+        messageload = file.read()
+
+    messageloadbytes = bytes(messageload, "utf-8")
+
+    public_key.verify(
+        signatureload,
+        messageloadbytes,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+    print("El certificado ha sido verificado")
+
 
 
 def crearclaves(username, passfirma):
