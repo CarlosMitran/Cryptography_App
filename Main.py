@@ -62,7 +62,7 @@ def pantalla_pass_firma(data_list):
     passwordLabel.pack()
     passwordBox = ttk.Entry(root, show='*', font=('Century 12'), width=40)
     passwordBox.pack()
-    firmar = ttk.Button(root, text="Firmar", command=lambda: adduser(data_list, str(passwordBox.get())))
+    firmar = ttk.Button(root, text="Guardar", command=lambda: adduser(data_list, str(passwordBox.get())))
     firmar.pack()
 
 
@@ -150,8 +150,6 @@ def pantalla_firma(readlist):
     passwordLabel.pack()
     passwordBox = ttk.Entry(root, show='*', font=('Century 12'), width=40)
     passwordBox.pack()
-    loginWarning = Label(root, text="(If user does not exist, it will be created)", font=('Century 12 italic'))
-    loginWarning.pack(pady=10)
     firmar = ttk.Button(root, text="Firmar",
                         command=lambda: generate_firma(readlist, str(passwordBox.get()), userBox.get()))
     firmar.pack()
@@ -407,12 +405,7 @@ def generate_firma(readlist, passwordbox, username):
     space1.pack(pady=10)
     title = Label(root, text="Firmado y verificado con éxito", font=('Century 20 bold'))
     title.pack(pady=30)
-    generarcertificados(doctorName, password, username)
-
-
-
-
-
+    #System.generarcertificados(doctorName, password, username)
 
 
 def crearclaves(username, passfirma):
