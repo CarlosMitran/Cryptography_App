@@ -129,7 +129,7 @@ def display_data(list):
     writeButton.pack()
     GenerateFirma = ttk.Button(root, text="Generar firma", command=lambda: pantalla_firma(readlist))
     GenerateFirma.pack()
-    LogOutButton = ttk.Button(root, text="Log out", command=lambda: login)
+    LogOutButton = ttk.Button(root, text="Log out", command=lambda: login())
     LogOutButton.pack()
 
 
