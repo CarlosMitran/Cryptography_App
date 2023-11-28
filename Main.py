@@ -107,24 +107,24 @@ def display_data(list):
     root.geometry("750x800")
     DNI = ""
     readlist = decript(list)
+    scrollbar = Scrollbar(root)
+    scrollbar.pack(side = RIGHT, fill = Y)
+    listbox = Listbox(root, yscrollcommand=scrollbar.set, width = 70, height = 33, font='Century 16')
     for item in readlist:
         if item["DNI"] != DNI:
-            space1 = Label(root, text=" ")
-            space1.pack(pady=10)
-            dniLabel = ttk.Label(root, text=item["DNI"], font=('Century 12'))
-            dniLabel.pack()
-            nameLabel = ttk.Label(root, text=item["Nombre"] + " " + item["Apellido"], font=('Century 12'))
-            nameLabel.pack()
+            listbox.insert(END, " ")
+            listbox.insert(END, item["DNI"])
+            listbox.insert(END, item["Nombre"] + " " + item["Apellido"])
 
-        dateLabel = ttk.Label(root, text=item["Date"], font='Century 12')
-        dateLabel.pack()
-        hospitalLabel = ttk.Label(root, text=item["Hospital"], font='Century 12')
-        hospitalLabel.pack()
-        symptomsLabel = ttk.Label(root, text=item["Symptoms"], font='Century 12')
-        symptomsLabel.pack()
+        listbox.insert(END, item["Date"])
+        listbox.insert(END, item["Hospital"])
+        listbox.insert(END, item["Symptoms"])
 
         DNI = item["DNI"]
-
+    space1 = ttk.Label(root, text= " ")
+    space1.pack()
+    listbox.pack()
+    scrollbar.config(command=listbox.yview)
     writeButton = ttk.Button(root, text="Write new data", command=lambda: add_data(item["username"]))
     writeButton.pack()
     LogOutButton = ttk.Button(root, text="Log out", command=lambda: login)
