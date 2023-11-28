@@ -46,7 +46,8 @@ def validarentrada(doctorName, pacient):
             # Read the entire content of the file
             return validarPass(doctorName, pacient)
     except FileNotFoundError as ex:
-        raise Exception("Wrong file or file path") from ex
+        incorrectPasswordLabel = Label(root, text="El doctor no está en la base de datos", font='Century 12', fg="#FF5733")
+        incorrectPasswordLabel.pack()
 
 
 def validarPass(doctorName, pacient):
@@ -69,26 +70,30 @@ def validarPass(doctorName, pacient):
 
 def generarCSR(doctorName, password, pacient):
     passbytes = bytes(password, "utf-8")
-    with open(doctorName + ".txt", 'rb') as file:
-        # Read the entire content of the file
-        key = serialization.load_pem_private_key(
-            file.read(),
-            password=passbytes,
-        )
+    try:
+        with open(doctorName + ".txt", 'rb') as file:
+            # Read the entire content of the file
+            key = serialization.load_pem_private_key(
+                file.read(),
+                password=passbytes,
+            )
+    except ValueError:
+        incorrectPasswordLabel = Label(root, text="Incorrect password", font='Century 12', fg="#FF5733")
+        incorrectPasswordLabel.pack()
 
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
 
         # Provide various details about who we are.
 
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "ES"),
 
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "California"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Madrid"),
 
-        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "Leganés"),
 
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "My Company"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, doctorName),
 
-        x509.NameAttribute(NameOID.COMMON_NAME, "mysite.com"),
+        x509.NameAttribute(NameOID.COMMON_NAME, pacient),
 
     ])).add_extension(
 
@@ -132,34 +137,20 @@ def createcert(pacient, doctorName):
     destination_path = "CERT/CERT"+pacient+".pem"
     # Copy the file
     shutil.copyfile(source_path, destination_path)
-    readcert(pacient, doctorName)
+    validarCert(pacient)
 
-
-def readcert(username, doctorName):
-    title = Label(root, text="CSR creado, introduzca la clave de certificado", font=('Century 20 bold'))
-    title.pack(pady=30)
-    space2 = Label(root, text=" ")
-    space2.pack(pady=5)
-    passwordLabel = ttk.Label(root, text="Contraseña:", font=('Century 12'))
-    passwordLabel.pack()
-    passwordBox = ttk.Entry(root, show='*', font=('Century 12'), width=40)
-    passwordBox.pack()
-    loginButton = ttk.Button(root, text="Log in",
-                             command=lambda: validarCert(str(passwordBox.get()), username))
-    loginButton.pack()
-
-
-def validarCert(password, username):
+def validarCert(username):
     with open("CERT/" + "CERT" + username + ".pem", "rb") as f:
         pem_data = f.read()
-    with open("AC1/privado/ca1key.pem", 'rb') as file:
-        # Read the entire content of the file
-        private_key = serialization.load_pem_private_key(
-            file.read(),
-            password= bytes(password, "utf-8"),
-        )
-    public_key = private_key.public_key()
+    with open("AC1/ac1cert.pem", 'rb') as file:
+        certbytes = file.read()
+    certcnf = x509.load_pem_x509_certificate(certbytes)
+    public_key = certcnf.public_key()
     cert = x509.load_pem_x509_certificate(pem_data)
+    loginButton = ttk.Button(root, text="Volver",
+                             command=lambda: certificar())
+    loginButton.pack()
+
     try:
         public_key.verify(
             cert.signature,
@@ -170,9 +161,12 @@ def validarCert(password, username):
         CorrectPasswordLabel = Label(root, text="Certificado verificado correctamente", font='Century 12')
         CorrectPasswordLabel.pack()
         return True
-    except ValueError:
-        incorrectPasswordLabel = Label(root, text="Incorrect password", font='Century 12', fg="#FF5733")
+    except cryptography.exceptions.InvalidSignature:
+        incorrectPasswordLabel = Label(root, text="Verificación fallida", font='Century 12', fg="#FF5733")
         incorrectPasswordLabel.pack()
+
+
+
 
 
 def destroy_widgets():

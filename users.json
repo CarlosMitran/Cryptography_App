@@ -1,7 +1,12 @@
 [
   {
     "username": "hello",
-    "password": "zGoyLWK+2e7siOeI64V0i5eVg/8TAbYl0iGMYnOYnhQ=",
-    "salt": "eRnqMQOfVLMyNpHBOjJCLg=="
+    "password": "Bn9pq4q+1fk3+B4haRDj6u6ZmPHvmJ2g9VX/U+cF9KM=",
+    "salt": "uG+hi+ixiQrOv0y/82dJzQ=="
+  },
+  {
+    "username": "doctor1",
+    "password": "EneqD4xlv0HmKk+LWUeBwgSToJaS7wvdYGKDrfdMmnc=",
+    "salt": "DSF0QoFa+XQ52N9qrGXwEw=="
   }
 ]

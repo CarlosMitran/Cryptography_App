@@ -338,6 +338,9 @@ def generate_firma(readlist, passwordbox, username):
             doctorName = item["username"]
 
     if doctorName is False:
+        incorrectPasswordLabel = Label(root, text="El usuario no es su paciente", font='Century 12',
+                                       fg="#FF5733")
+        incorrectPasswordLabel.pack()
         return False
 
     with open(doctorName + ".txt", 'rb') as file:
@@ -403,8 +406,7 @@ def generate_firma(readlist, passwordbox, username):
 
     space1 = Label(root, text=" ")
     space1.pack(pady=10)
-    title = Label(root, text="Firmado y verificado con éxito", font=('Century 20 bold'))
-    title.pack(pady=30)
+    read_data(doctorName)
     #System.generarcertificados(doctorName, password, username)
 
 
