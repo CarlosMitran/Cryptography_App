@@ -109,7 +109,7 @@ def display_data(list):
     readlist = decript(list)
     scrollbar = Scrollbar(root)
     scrollbar.pack(side = RIGHT, fill = Y)
-    listbox = Listbox(root, yscrollcommand=scrollbar.set, width = 70, height = 33, font='Century 16')
+    listbox = Listbox(root, yscrollcommand=scrollbar.set, width = 70, height = 30, font='Century 16')
     for item in readlist:
         if item["DNI"] != DNI:
             listbox.insert(END, " ")
@@ -129,6 +129,8 @@ def display_data(list):
     writeButton.pack()
     GenerateFirma = ttk.Button(root, text="Generar firma", command=lambda: pantalla_firma(readlist))
     GenerateFirma.pack()
+    GenerateVerificar = ttk.Button(root, text="Verificar firma", command=lambda: pantalla_verificar())
+    GenerateVerificar.pack()
     LogOutButton = ttk.Button(root, text="Log out", command=lambda: login())
     LogOutButton.pack()
 
@@ -153,6 +155,30 @@ def pantalla_firma(readlist):
     firmar = ttk.Button(root, text="Firmar",
                         command=lambda: generate_firma(readlist, str(passwordBox.get()), userBox.get()))
     firmar.pack()
+
+def pantalla_verificar():
+    destroy_widgets()
+    root.geometry("750x500")
+    space1 = Label(root, text=" ")
+    space1.pack(pady=10)
+    title = Label(root, text="Validación de Datos", font=('Century 20 bold'))
+    title.pack(pady=30)
+    userLabel = ttk.Label(root, text="Nombre del doctor:", font=('Century 12'))
+    userLabel.pack()
+    userBox = ttk.Entry(root, font=('Century 12'), width=40)
+    userBox.pack()
+    space2 = Label(root, text=" ")
+    space2.pack(pady=5)
+    passwordLabel = ttk.Label(root, text="Nombre del paciente:", font=('Century 12'))
+    passwordLabel.pack()
+    passwordBox = ttk.Entry(root, font=('Century 12'), width=40)
+    passwordBox.pack()
+    loginButton = ttk.Button(root, text="Verificar",
+                             command=lambda: verificarfirma(str(userBox.get()), str(passwordBox.get())))
+    loginButton.pack()
+    loginButton = ttk.Button(root, text="Volver",
+                             command=lambda: login())
+    loginButton.pack()
 
 
 def destroy_widgets():
@@ -380,13 +406,22 @@ def generate_firma(readlist, passwordbox, username):
     with open(doctorName + "Signature" + username + ".txt", "wb") as sig:
         sig.write(signature)
 
-    with open(doctorName + "pub" + ".txt", "rb") as pub_key_file:
 
-        public_key = serialization.load_pem_public_key(
-            pub_key_file.read(),
+    read_data(doctorName)
 
-        )
 
+def verificarfirma(doctorName, username):
+    try:
+        with open("CERT/" + "CERT" + doctorName + ".pem", "rb") as f:
+            pem_data = f.read()
+    except FileNotFoundError as ex:
+        incorrectPasswordLabel = Label(root, text="El doctor no tiene un certificado", font='Century 12',
+                                           fg="#FF5733")
+        incorrectPasswordLabel.pack()
+        return False
+
+    cert = x509.load_pem_x509_certificate(pem_data)
+    public_key = cert.public_key()
     with open(doctorName + "Signature" + username + ".txt", "rb") as sig:
         signatureload = sig.read()
     with open(username + "signedData" + ".txt", "r") as file:
@@ -406,8 +441,11 @@ def generate_firma(readlist, passwordbox, username):
 
     space1 = Label(root, text=" ")
     space1.pack(pady=10)
-    read_data(doctorName)
-    #System.generarcertificados(doctorName, password, username)
+
+
+    correctPasswordLabel = Label(root, text="Verificado correctamente", font='Century 12',
+                               )
+    correctPasswordLabel.pack()
 
 
 def crearclaves(username, passfirma):

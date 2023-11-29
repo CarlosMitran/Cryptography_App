@@ -8,5 +8,15 @@
     "username": "doctor1",
     "password": "EneqD4xlv0HmKk+LWUeBwgSToJaS7wvdYGKDrfdMmnc=",
     "salt": "DSF0QoFa+XQ52N9qrGXwEw=="
+  },
+  {
+    "username": "doctor2",
+    "password": "ljmPL/CW1yHW38E/Cgg7oc2fYdkoR4pgmDrgTxncDsc=",
+    "salt": "7KOoPRKyoIUREWYCEzxZ4A=="
+  },
+  {
+    "username": "doctor3",
+    "password": "vPqrpKuBFFehRxMjN1O/Fa9eMdJ/4RUai3e4cTsN7wY=",
+    "salt": "jlUkm5RCk9tbFcKobNYcdA=="
   }
 ]

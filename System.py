@@ -31,26 +31,22 @@ def certificar():
     userBox.pack()
     space2 = Label(root, text=" ")
     space2.pack(pady=5)
-    passwordLabel = ttk.Label(root, text="Nombre del paciente", font=('Century 12'))
-    passwordLabel.pack()
-    passwordBox = ttk.Entry(root, font=('Century 12'), width=40)
-    passwordBox.pack()
     loginButton = ttk.Button(root, text="Log in",
-                             command=lambda: validarentrada(str(userBox.get()), str(passwordBox.get())))
+                             command=lambda: validarentrada(str(userBox.get())))
     loginButton.pack()
 
 
-def validarentrada(doctorName, pacient):
+def validarentrada(doctorName):
     try:
         with open(doctorName + ".txt", 'rb') as file:
             # Read the entire content of the file
-            return validarPass(doctorName, pacient)
+            return validarPass(doctorName)
     except FileNotFoundError as ex:
         incorrectPasswordLabel = Label(root, text="El doctor no está en la base de datos", font='Century 12', fg="#FF5733")
         incorrectPasswordLabel.pack()
 
 
-def validarPass(doctorName, pacient):
+def validarPass(doctorName):
     destroy_widgets()
     root.geometry("750x500")
     space1 = Label(root, text=" ")
@@ -64,11 +60,11 @@ def validarPass(doctorName, pacient):
     passwordBox = ttk.Entry(root, show='*', font=('Century 12'), width=40)
     passwordBox.pack()
     loginButton = ttk.Button(root, text="Log in",
-                             command=lambda: generarCSR(doctorName, str(passwordBox.get()), pacient))
+                             command=lambda: generarCSR(doctorName, str(passwordBox.get())))
     loginButton.pack()
 
 
-def generarCSR(doctorName, password, pacient):
+def generarCSR(doctorName, password):
     passbytes = bytes(password, "utf-8")
     try:
         with open(doctorName + ".txt", 'rb') as file:
@@ -91,9 +87,9 @@ def generarCSR(doctorName, password, pacient):
 
         x509.NameAttribute(NameOID.LOCALITY_NAME, "Leganés"),
 
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, doctorName),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "System"),
 
-        x509.NameAttribute(NameOID.COMMON_NAME, pacient),
+        x509.NameAttribute(NameOID.COMMON_NAME, doctorName),
 
     ])).add_extension(
 
@@ -117,27 +113,27 @@ def generarCSR(doctorName, password, pacient):
 
     # Write our CERT out to disk.
 
-    with open("AC1/solicitudes/CSR" + pacient + ".pem", "wb") as f:
+    with open("AC1/solicitudes/CSR" + doctorName + ".pem", "wb") as f:
         f.write(csr.public_bytes(serialization.Encoding.PEM))
 
-    createcert(pacient, doctorName)
+    createcert(doctorName)
 
 
-def createcert(pacient, doctorName):
+def createcert(doctorName):
     with open("AC1/serial", "r") as f:
         num = f.read()
 
     os.chdir("AC1")
     os.system("ls")
-    os.system("openssl req -in ./solicitudes/CSR" + pacient + ".pem -text -noout")
-    os.system("openssl ca -in ./solicitudes/CSR" + pacient + ".pem -notext -config ./openssl_AC1.cnf")
+    os.system("openssl req -in ./solicitudes/CSR" + doctorName + ".pem -text -noout")
+    os.system("openssl ca -in ./solicitudes/CSR" + doctorName + ".pem -notext -config ./openssl_AC1.cnf")
     os.chdir("..")
     source_path = "AC1/nuevoscerts/"+num[0]+num[1]+".pem"
     print(source_path)
-    destination_path = "CERT/CERT"+pacient+".pem"
+    destination_path = "CERT/CERT"+doctorName+".pem"
     # Copy the file
     shutil.copyfile(source_path, destination_path)
-    validarCert(pacient)
+    validarCert(doctorName)
 
 def validarCert(username):
     with open("CERT/" + "CERT" + username + ".pem", "rb") as f:
